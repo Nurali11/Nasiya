@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  PENDING
+  ACTIVE
+}
+
+enum Roles {
+  ADMIN
+  SUPER_ADMIN
+}
+model Admin {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  email     String   @unique
+  password  String
+  role      Roles    @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Seller {
+  id          String        @id @default(uuid())
+  name        String
+  email       String        @unique
+  phone       String        @unique
+  image       String
+  password    String
+  balance     Int           @default(0)
+  active      Status       @default(PENDING)
+  Sample      Sample[]
+  Debtor      Debtor[]
+  Messages    Message[]
+  Nasiya      Nasiya[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  DebtorImage DebtorImage[]
+}
+
+model Debtor {
+  id             String           @id @default(uuid())
+  name           String
+  address        String
+  comment        String?
+  sellerId       String
+  Seller         Seller           @relation(fields: [sellerId], references: [id])
+  Message        Message[]
+  Nasiya         Nasiya[]
+  Payment        Payment[]
+  Images         DebtorImage[]
+  Phone          DebtorPhone[]
+  PaymentHistory paymentHistory[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model Nasiya {
+  id           String        @id @default(uuid())
+  name         String
+  startDate    String
+  period       Int
+  comment      String?
+  debtorId     String
+  sum          Int
+  monthlySum   Int
+  remainedSum  Int
+  Debtor       Debtor        @relation(fields: [debtorId], references: [id])
+  Payments     Payment[]
+  nasiyaImages NasiyaImage[]
+  Seller       Seller?       @relation(fields: [sellerId], references: [id])
+  sellerId     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  sum       Int
+  debtorId  String
+  periodMonth Int
+  Debtor    Debtor   @relation(fields: [debtorId], references: [id])
+  Nasiya    Nasiya?  @relation(fields: [nasiyaId], references: [id])
+  nasiyaId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model paymentHistory {
+  id       String   @id @default(uuid())
+  amount   Int
+  debtorId String
+  createAt DateTime @default(now())
+  debtId   String
+  Debtor   Debtor   @relation(fields: [debtorId], references: [id])
+}
+
+model Sample {
+  id        String   @id @default(uuid())
+  comment   String
+  isActive  Boolean  @default(true)
+  sellerId  String
+  seller    Seller   @relation(fields: [sellerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  text      String
+  isSend    Boolean  @default(true)
+  debtorId  String
+  debtor    Debtor   @relation(fields: [debtorId], references: [id])
+  Seller    Seller?  @relation(fields: [sellerId], references: [id])
+  sellerId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DebtorImage {
+  id        String   @id @default(uuid())
+  image     String
+  Seller    Seller?  @relation(fields: [sellerId], references: [id])
+  sellerId  String?
+  Debtor    Debtor?  @relation(fields: [debtorId], references: [id])
+  debtorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DebtorPhone {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  Debtor    Debtor?  @relation(fields: [debtorId], references: [id])
+  debtorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NasiyaImage {
+  id        String   @id @default(uuid())
+  image     String
+  Nasiya    Nasiya?  @relation(fields: [nasiyaId], references: [id])
+  nasiyaId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
