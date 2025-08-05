@@ -1,17 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards, Res } from '@nestjs/common';
 import { DebtService } from './debt.service';
 import { CreateNasiyaDto } from './dto/create-nasiya.dto';
 import { UpdateNasiyaDto } from './dto/update-nasiya.dto';
 import { ApiQuery } from '@nestjs/swagger';
+import { RolesD } from 'src/common/decorators/roles.decorator';
+import { AuthGuard } from 'src/common/guards/auth.guard';
+import { RoleGuard } from 'src/common/guards/role.guard';
+import { Request } from 'express';
 
 @Controller('debt')
 export class DebtController {
   constructor(private readonly debtService: DebtService) {}
 
+  @RolesD("SELLER")
   @Post()
-  create(@Body() data: CreateNasiyaDto, @Req() req:Request) {
-    const sellerId=(req as any).user.id
-    return this.debtService.create(data);
+  @UseGuards(AuthGuard, RoleGuard)
+  create(@Body() data: CreateNasiyaDto, @Req() res: Request) {
+    return this.debtService.create(data, res);
   }
 
   @ApiQuery({ name: 'page', required: false, type: Number })

@@ -53,11 +53,6 @@ export class SellerController {
     return await this.sellerService.login(data);
   }
 
-  // @Post('sent-otp')
-  // async requestReset(@Body() data: ResetRequestDto) {
-  //   return this.sellerService.requestReset(data);
-  // }
-
   // @Post('verify-otp')
   // async verifyOtp(@Body() data: VerifyOtpDto) {
   //   return this.sellerService.verifyOtp(data);
@@ -68,10 +63,10 @@ export class SellerController {
   //   return this.sellerService.resetPassword(data);
   // }
 
-  @Post('refresh-token')
-  async refreshToken(@Body() data: RefreshTokenDto) {
-    return await this.sellerService.refreshToken(data);
-  }
+  // @Post('refresh-token')
+  // async refreshToken(@Body() data: RefreshTokenDto) {
+  //   return await this.sellerService.refreshToken(data);
+  // }
 
   @Patch(':id')
     update(@Param('id') id: string, @Body() data: UpdateSellerDto) {

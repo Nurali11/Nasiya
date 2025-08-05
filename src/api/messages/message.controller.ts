@@ -40,13 +40,17 @@ export class MessageController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'debtorId', required: false, type: String })
+  @ApiQuery({ name: 'sellerId', required: false, type: String })
   findAll(
+    @Query("search") filter: string,
+    @Query("debtorId") debtorId: string,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+    @Query("sellerId") sellerId: string,
     @Req() req: Request,
-    @Query() filter: FilterDto,
-    @Query('debtorId') debtorId?: string,
   ) {
     const userId = req['user'].id;
-    return this.messageService.findAll(filter, debtorId, userId);
+    return this.messageService.findAll(filter, debtorId, userId, page, limit, sellerId);
   }
 
   @ApiBearerAuth()

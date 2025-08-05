@@ -1,202 +1,108 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreatePaymentDto, PayAsYouWishDto } from './dto/create-payment.dto';
-import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { RemainingMonthsDto } from './dto/RemainingMonths.dto';
-import { MultiMonthPayDto } from './dto/MultiMonthlyPaydto';
+import { AnyQuantityDto, CreatePaymentDto } from './dto/create-payment.dto';
 import { PrismaService } from 'src/core/entity/prisma.service';
+import { PayForMonths } from './dto/RemainingMonths.dto';
 
 @Injectable()
 export class PaymentsService {
   constructor(private readonly prisma: PrismaService) { }
 
   async OneMonth(data: CreatePaymentDto, sellerId: string) {
+    try {
+      let { debtId } = data
+      let nasiya = await this.prisma.nasiya.findFirst({ where: { id: debtId } })
+      if (!nasiya) { return new NotFoundException('Borrowed product not found') }
+      if (sellerId != nasiya.sellerId) { return new BadRequestException('This borrowed product does not belong to the specified debtor') }
 
+      let firstMonth = await this.prisma.paymentPeriod.findFirst({ where: { nasiyaId: debtId, }, orderBy: { period: 'asc' } })
+      if (!firstMonth) {
+        return new NotFoundException('Borrowed product not found')
+      }
+      let deleted = await this.prisma.paymentPeriod.delete({ where: { id: firstMonth.id } })
+      await this.prisma.nasiya.update({ where: { id: nasiya.id }, data: { remainedSum: nasiya.remainedSum - firstMonth.sum } })
+
+      let historyWrite = await this.prisma.paymentHistory.create({ data: { amount: firstMonth.sum, nasiyaId: nasiya.id, debtorId: nasiya.debtorId } })
+      return {
+        message: "Successfully paid for next month",
+        data: deleted
+      }
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
-  async anyQuantity(dto: PayAsYouWishDto, SellerId: string) {
-    const nasiya = await this.prisma.nasiya.findUnique({
-      where: { id: dto.debtId },
-      include: {
-        Debtor: {
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
+  async anyQuantity(data: AnyQuantityDto, sellerId: string) {
+    try {
+      let { debtId } = data
+      let amount = data.amount
+      let nasiya = await this.prisma.nasiya.findFirst({ where: { id: debtId } })
+      console.log(sellerId, nasiya);
+      if (!nasiya) { return new NotFoundException('Borrowed product not found') }
+      if (sellerId != nasiya.sellerId) { return new BadRequestException('This borrowed product does not belong to the specified debtor') }
 
-    if (!nasiya) {
-      throw new NotFoundException('Borrowed product not found');
-    }
+      let remainedMonths = await this.prisma.paymentPeriod.findMany({ where: { nasiyaId: debtId }, orderBy: { period: 'asc' } })
+      if (!remainedMonths.length) {
+        return new NotFoundException('Borrowed product not found')
+      }
 
-    if (nasiya.sum <= 0) {
-      throw new BadRequestException(
-        `This product is already fully paid. Total amount is 0 sum.`,
-      );
-    }
+      for (let i of remainedMonths) {
+        if (amount >= i.sum) {
+          await this.prisma.paymentPeriod.delete({ where: { id: i.id } })
+          await this.prisma.nasiya.update({ where: { id: nasiya.id }, data: { remainedSum: nasiya.remainedSum - i.sum } })
+          amount = amount - i.sum
+        } else if (amount > 0 && amount < i.sum) {
+          await this.prisma.paymentPeriod.update({ where: { id: i.id }, data: { sum: i.sum - amount } })
+          break
+        }
+      }
 
-    if (dto.amount <= 0) {
-      throw new BadRequestException('Amount must be greater than 0');
-    }
-
-    if (dto.amount > nasiya.sum) {
-      throw new BadRequestException(
-        `You cannot pay more than ${nasiya.sum} sum`,
-      );
-    }
-
-    await this.prisma.paymentHistory.create({
-      data: {
-        debtId: dto.debtId,
-        debtorId: dto.debtorId,
-        amount: dto.amount,
-      },
-    });
-
-    await this.prisma.seller.update({
-      where: { id: SellerId },
-      data: {
-        balance: {
-          increment: dto.amount,
-        },
-      },
-    });
-
-    const newTotal = nasiya.sum - dto.amount;
-
-    if (newTotal <= 0) {
-      await this.prisma.nasiya.update({
-        where: { id: dto.debtId },
-        data: { sum: 0 },
-      });
+      let historyWrite = await this.prisma.paymentHistory.create({ data: { amount, nasiyaId: nasiya.id, debtorId: nasiya.debtorId } })
 
       return {
-        message:
-          'Payment completed. The sum amount is now 0 sum. Further payments are not allowed.',
-      };
-    } else {
-      await this.prisma.nasiya.update({
-        where: { id: dto.debtId },
-        data: { sum: newTotal },
-      });
+        message: "Successfully paid",
+        data
+      }
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
-      const remainingMonths = Math.ceil(
-        newTotal / nasiya.monthlySum,
-      );
+  async forMonths(data: PayForMonths, sellerId: string) {
+    try {
+      let { debtId } = data
+      let errorMessage = ""
+      let nasiya = await this.prisma.nasiya.findFirst({ where: { id: debtId } })
+      if (!nasiya) { return new NotFoundException('Borrowed product not found') }
+      if (sellerId != nasiya.sellerId) { return new BadRequestException('This borrowed product does not belong to the specified debtor') }
+
+      let paidSum = 0
+
+      for (let i of data.monthsToPay) {
+        let month = await this.prisma.paymentPeriod.findFirst({ where: { nasiyaId: debtId, period: i } })
+        if (!month) {
+          errorMessage += `Month ${i} not found.`
+          continue
+        }
+        paidSum += month.sum
+        await this.prisma.paymentPeriod.delete({ where: { id: month.id } })
+      }
+
+      await this.prisma.nasiya.update({ where: { id: nasiya.id }, data: { remainedSum: nasiya.remainedSum - paidSum } })
+      if (paidSum) {
+        await this.prisma.paymentHistory.create({
+          data: {
+            amount: paidSum, nasiyaId
+              : nasiya.id, debtorId: nasiya.debtorId
+          }
+        })
+      }
 
       return {
-        message: `Payment successful. ${remainingMonths} months of payment remaining`,
-        remainingAmount: newTotal,
-      };
+        message: `Successfully paid. ${errorMessage ? '\n' + errorMessage : ''}`,
+        data
+      }
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
   }
-
-  async calculateRemainingMonths(dto: RemainingMonthsDto) {
-    const nasiya = await this.prisma.nasiya.findUnique({
-      where: { id: dto.debtId },
-    });
-
-    if (!nasiya) {
-      throw new NotFoundException('Borrowed product not found');
-    }
-
-    if (nasiya.debtorId !== dto.debtorId) {
-      throw new BadRequestException(
-        'This borrowed product does not belong to the specified debtor',
-      );
-    }
-
-    if (nasiya.sum <= 0) {
-      return {
-        message: 'This product is fully paid. No remaining payments.',
-        remainingMonths: 0,
-        remainingAmount: 0,
-      };
-    }
-
-    const remainingMonths = Math.ceil(
-      nasiya.sum / nasiya.monthlySum,
-    );
-
-    return {
-      debtId: dto.debtId,
-      debtorId: dto.debtorId,
-      sum: nasiya.sum,
-      monthlySum: nasiya.monthlySum,
-      remainingMonths,
-    };
-  }
-async multiMonthPay(dto: MultiMonthPayDto, SellerId: string) {
-  const nasiya = await this.prisma.nasiya.findUnique({
-    where: { id: dto.debtId },
-  });
-
-  if (!nasiya) {
-    throw new NotFoundException('Borrowed product not found');
-  }
-
-  if (nasiya.debtorId !== dto.debtorId) {
-    throw new BadRequestException(
-      'This borrowed product does not belong to the specified debtor',
-    );
-  }
-
-  if (nasiya.sum <= 0) {
-    throw new BadRequestException(
-      'This product is already fully paid. Further payments are not allowed.',
-    );
-  }
-
-  const remainingMonths = Math.ceil(
-    nasiya.sum / nasiya.monthlySum,
-  );
-
-  if (dto.monthsToPay > remainingMonths) {
-    throw new BadRequestException(
-      `You cannot pay more than ${remainingMonths} months. Only ${remainingMonths} months are left.`,
-    );
-  }
-
-  const totalPayment = dto.monthsToPay * nasiya.monthlySum;
-
-  await this.prisma.paymentHistory.create({
-    data: {
-      debtId: dto.debtId,
-      debtorId: dto.debtorId,
-      amount: totalPayment,
-    },
-  });
-
-  await this.prisma.seller.update({
-    where: { id: SellerId },
-    data: {
-      balance: {
-        increment: totalPayment,
-      },
-    },
-  });
-
-  const newTotal = nasiya.sum - totalPayment;
-
-  await this.prisma.nasiya.update({
-    where: { id: dto.debtId },
-    data: { sum: newTotal },
-  });
-
-  const remainingMonthsAfterPayment = Math.ceil(
-    newTotal / nasiya.monthlySum,
-  );
-
-  const message =
-    newTotal <= 0
-      ? 'Payment completed. Total amount is now 0 sum.'
-      : `Payment successful. ${remainingMonthsAfterPayment} months of payment remaining`;
-
-  return {
-    message,
-    remainingAmount: newTotal,
-    remainingMonths: remainingMonthsAfterPayment,
-  };
-}
-
 }

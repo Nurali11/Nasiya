@@ -4,10 +4,11 @@ import { AuthController } from './auth.controller';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/common/mail/mail.service';
 import { PrismaService } from 'src/core/entity/prisma.service';
+import { SharedJwtModule } from 'src/api/shared/jwt.module';
 
 @Module({
-  imports: [],
+  imports: [SharedJwtModule],
   controllers: [AuthController],
-  providers: [AuthService, JwtService, MailService, PrismaService]
+  providers: [AuthService, MailService, PrismaService]
 })
 export class AuthModule { }

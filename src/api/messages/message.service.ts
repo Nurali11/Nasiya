@@ -3,7 +3,6 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { FilterDto } from 'src/common/dto/filter.dto';
 import { PrismaService } from 'src/core/entity/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
@@ -24,7 +23,7 @@ export class MessageService {
       });
 
       return {
-        message: "Createds",
+        message: "Successfully created",
         data: message,
       }
     } catch (error) {
@@ -34,42 +33,24 @@ export class MessageService {
     }
   }
 
-  async findAll(filter: FilterDto, debtorId?: string, userId?: string) {
+  async findAll(filter: string, debtorId?: string, userId?: string, page = 1, limit = 10, sellerId?: string) {
     try {
-      const { limit = 10, page = 1, search } = filter;
       const where: any = { sellerId: userId };
-
-      if (search) {
+      if (filter) {
         where.message = {
-          contains: search,
+          contains: filter,
           mode: 'insensitive',
         };
       }
 
-      let messages: any;
+      where.sellerId = sellerId || userId
 
-      if (debtorId) {
-        messages = await this.prisma.message.findMany({
-          where: { ...where, debtorId },
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: { createdAt: 'desc' },
-        });
-      } else {
-        messages = await this.prisma.debtor.findMany({
-          where: { sellerId: userId },
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            Message: {
-              take: 1,
-              orderBy: { createdAt: 'desc' },
-            },
-            Phone: true
-          },
-        });
-      }
+      const messages = await this.prisma.message.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      })
 
       const total = debtorId
         ? await this.prisma.message.count({
@@ -78,7 +59,7 @@ export class MessageService {
         : await this.prisma.debtor.count({ where: { sellerId: userId } });
 
       return {
-        message: "Create Message",
+        message: "Messages fetched successfully",
         data: messages,
         total,
         page,

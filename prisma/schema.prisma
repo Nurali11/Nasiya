@@ -22,6 +22,7 @@ enum Roles {
   ADMIN
   SUPER_ADMIN
 }
+
 model Admin {
   id        String   @id @default(uuid())
   name      String
@@ -41,7 +42,7 @@ model Seller {
   image       String
   password    String
   balance     Int           @default(0)
-  active      Status       @default(PENDING)
+  active      Status        @default(PENDING)
   Sample      Sample[]
   Debtor      Debtor[]
   Messages    Message[]
@@ -69,34 +70,34 @@ model Debtor {
 }
 
 model Nasiya {
-  id           String        @id @default(uuid())
-  name         String
-  startDate    String
-  period       Int
-  comment      String?
-  debtorId     String
-  sum          Int
-  monthlySum   Int
-  remainedSum  Int
-  Debtor       Debtor        @relation(fields: [debtorId], references: [id])
-  Payments     Payment[]
-  nasiyaImages NasiyaImage[]
-  Seller       Seller?       @relation(fields: [sellerId], references: [id])
-  sellerId     String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id             String           @id @default(uuid())
+  name           String
+  startDate      String
+  period         Int
+  comment        String?
+  debtorId       String
+  sum            Int
+  monthlySum     Int
+  remainedSum    Int
+  Debtor         Debtor           @relation(fields: [debtorId], references: [id])
+  nasiyaImages   NasiyaImage[]
+  PaidMonths     PaymentPeriod[]
+  PaymentHistory paymentHistory[]
+  Seller         Seller?          @relation(fields: [sellerId], references: [id])
+  sellerId       String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 }
 
 model Payment {
-  id        String   @id @default(uuid())
-  sum       Int
-  debtorId  String
+  id          String   @id @default(uuid())
+  sum         Int
+  debtorId    String
   periodMonth Int
-  Debtor    Debtor   @relation(fields: [debtorId], references: [id])
-  Nasiya    Nasiya?  @relation(fields: [nasiyaId], references: [id])
-  nasiyaId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  Debtor      Debtor   @relation(fields: [debtorId], references: [id])
+  nasiyaId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model paymentHistory {
@@ -104,8 +105,10 @@ model paymentHistory {
   amount   Int
   debtorId String
   createAt DateTime @default(now())
-  debtId   String
-  Debtor   Debtor   @relation(fields: [debtorId], references: [id])
+
+  Debtor   Debtor  @relation(fields: [debtorId], references: [id])
+  Nasiya   Nasiya? @relation(fields: [nasiyaId], references: [id])
+  nasiyaId String?
 }
 
 model Sample {
@@ -130,6 +133,16 @@ model Message {
   updatedAt DateTime @updatedAt
 }
 
+model PaymentPeriod {
+  id        String   @id @default(uuid())
+  period    Int
+  sum       Int
+  Nasiya    Nasiya?  @relation(fields: [nasiyaId], references: [id])
+  nasiyaId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model DebtorImage {
   id        String   @id @default(uuid())
   image     String
@@ -143,7 +156,7 @@ model DebtorImage {
 
 model DebtorPhone {
   id        String   @id @default(uuid())
-  phone     String   @unique
+  phone     String
   Debtor    Debtor?  @relation(fields: [debtorId], references: [id])
   debtorId  String?
   createdAt DateTime @default(now())

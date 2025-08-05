@@ -11,15 +11,15 @@ import { SampleModule } from './sample/sample.module';
 import { PaymentsModule } from './payments/payments.module';
 import { DebtorModule } from './debtor/debtor.module';
 import { MessageModule } from './messages/message.module';
-import { MulterModule } from '@nestjs/platform-express';
+import { MulterModule } from './multer/multer.module';
 
 @Module({
   imports: [
+    MulterModule,
     AuthModule,
     SellerModule,
     DebtorModule,
     DebtModule,
-    MulterModule,
     SampleModule,
     MessageModule,
     PaymentsModule,

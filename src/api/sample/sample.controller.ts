@@ -1,38 +1,29 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Req,
-  UseGuards,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, Query } from '@nestjs/common';
 import { SampleService } from './sample.service';
 import { CreateSampleDto } from './dto/create-sample.dto';
 import { UpdateSampleDto } from './dto/update-sample.dto';
 import { Request } from 'express';
-import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiQuery } from '@nestjs/swagger';
 import { SampleFilterDto } from './dto/sample-filter.dto';
 import { AuthGuard } from 'src/common/guards/auth.guard';
+import { RolesD } from 'src/common/decorators/roles.decorator';
+import { RoleGuard } from 'src/common/guards/role.guard';
 
 @Controller('sample')
 export class SampleController {
   constructor(private readonly sampleService: SampleService) {}
 
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Post()
   create(@Body() createSampleDto: CreateSampleDto, @Req() req: Request) {
     const userId = req['user'].id;
     return this.sampleService.create(createSampleDto, userId);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard)
   @Get()
+  @UseGuards(AuthGuard)
+  @ApiQuery({ name: "sellerId", required: false, type: String, description: 'Seller id' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search' })
   @ApiQuery({ name: 'status', required: false, type: Boolean, description: 'Status (true/false)' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page', example: 1 })
@@ -44,14 +35,12 @@ export class SampleController {
     return this.sampleService.findAll(query, userId);
   }
 
-  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.sampleService.findOne(id);
   }
 
-  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   @Patch(':id')
   update(
@@ -63,7 +52,6 @@ export class SampleController {
     return this.sampleService.update(id, updateSampleDto, user);
   }
 
-  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: Request) {

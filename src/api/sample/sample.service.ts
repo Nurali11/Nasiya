@@ -32,7 +32,7 @@ export class SampleService {
 
   async findAll(filter: SampleFilterDto, userId: string) {
     try {
-      const { search, status, page = 1, limit = 10, sortBy, sortOrder } = filter;
+      const { search, status, page = 1, limit = 10, sortBy, sortOrder, sellerId } = filter;
       const sortField = sortBy ?? 'createdAt';
       const direction = sortOrder ?? 'desc';
 
@@ -40,6 +40,10 @@ export class SampleService {
 
       if (search) {
         where.text = { contains: search, mode: 'insensitive' };
+      }
+
+      if (sellerId) {
+        where.sellerId = sellerId
       }
 
       if (typeof status === 'boolean') {

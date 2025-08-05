@@ -1,13 +1,9 @@
-import {
-  Controller,
-  Post,
-  UploadedFile,
-  UseInterceptors,
-  BadRequestException,
-} from '@nestjs/common';
+import { BadRequestException, Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
+import { ApiBody, ApiConsumes } from '@nestjs/swagger';
+// @ts-ignore
+import type { File as MulterFile } from 'multer';
 
 @Controller('file')
 export class MulterController {
@@ -27,23 +23,17 @@ export class MulterController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: '../../uploads',
-        filename: (req, file, cb) => {
-          const uniqueName = `${Date.now()}-${Math.round(
-            Math.random() * 1e9,
-          )}-${file.originalname}`;
-          cb(null, uniqueName);
+        destination: '../uploads',
+        filename: (req, file, callback) => {
+          callback(null, `${Date.now()}${file.originalname}`);
         },
       }),
     }),
   )
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
+  uploadFile(@UploadedFile() file: MulterFile) {
     if (!file) {
-      throw new BadRequestException('File is required');
+      throw new BadRequestException('Send file please');
     }
-
-    return {
-      file: file.filename,
-    };
+    return { url: `${file.filename}` };
   }
 }

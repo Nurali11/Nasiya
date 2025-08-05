@@ -10,6 +10,7 @@ export default class Application {
       .setTitle('Nasiya')
       .setDescription('Nasiya Shop')
       .setVersion('1.0')
+      .addSecurityRequirements('bearer', ['bearer'])
       .addBearerAuth()
       .build();
     const documentFactory = () => SwaggerModule.createDocument(app, config);

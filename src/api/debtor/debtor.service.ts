@@ -41,7 +41,8 @@ export class DebtorService {
           })
         }
       }
-      return newDebtor
+      let debtor = await this.prisma.debtor.findUnique({ where: { id: newDebtor.id }, include: { Images: true, Phone: true } });
+      return debtor
 
     } catch (error) {
       throw new BadRequestException('Yaratishda xatolik: ' + error.message);
@@ -49,61 +50,88 @@ export class DebtorService {
   }
 
   async findAll(
+    phone: string,
+    address: string,
     filter: string,
     page: number,
     limit: number,
     sortBy: string,
     sortOrder: 'asc' | 'desc',
   ) {
-    const take = Number(limit) || 10
-    const skip = page ? (page - 1) * take : 0;
+    try {
+      const take = Number(limit) || 10
+      const skip = page ? (page - 1) * take : 0;
 
-    const where: any = {};
-    if (filter) {
-      where.OR = [
-        { name: { contains: filter, mode: 'insensitive' } },
-        { phone: { contains: filter, mode: 'insensitive' } },
-        { email: { contains: filter, mode: 'insensitive' } },
-      ];
-    }
+      const where: any = {};
+      if (filter) {
+        where.OR = [
+          { name: { contains: filter, mode: 'insensitive' } },
+        ];
+      }
 
-    const orderBy: any = {};
-    if (sortBy) {
-      orderBy[sortBy] = sortOrder || 'asc';
-    }
+      if (phone) {
+        where.OR = [
+          { Phone: { some: { phone: { contains: phone, mode: 'insensitive' } } } },
+        ]
+      }
 
-    const debtor = await this.prisma.debtor.findMany({
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        comment: true,
-        createdAt: true,
-        updatedAt: true,
-        Images: {
-          select: {
-            image: true
+      if (address) {
+        where.OR = [
+          { address: { contains: address, mode: 'insensitive' } },
+        ]
+      }
+
+      const orderBy: any = {};
+      if (sortBy) {
+        orderBy[sortBy] = sortOrder || 'asc';
+      }
+
+      const debtor = await this.prisma.debtor.findMany({
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          comment: true,
+          createdAt: true,
+          updatedAt: true,
+          Images: {
+            select: {
+              image: true
+            }
+          },
+          Phone: {
+            select: {
+              phone: true
+            }
+          },
+          PaymentHistory: {
+            select: {
+              amount: true,
+              createAt: true
+            }
           }
-        }
-      },
-      where,
-      skip,
-      take,
-      orderBy: sortBy ? orderBy : { createdAt: 'desc' },
+        },
+        where,
+        skip,
+        take,
+        orderBy: sortBy ? orderBy : { createdAt: 'desc' },
 
 
 
-    });
+      });
 
-    const total = await this.prisma.debtor.count({ where });
+      const total = await this.prisma.debtor.count({ where });
 
-    return {
-      data: debtor,
-      total,
-      page,
-      limit: take,
-      totalPages: Math.ceil(total / take),
-    };
+      return {
+        data: debtor,
+        total,
+        page,
+        limit: take,
+        totalPages: Math.ceil(total / take),
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   async findOne(id: string) {

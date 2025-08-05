@@ -32,6 +32,8 @@ export class CreateDebtorDto {
             "+998991234567",
             "+998992144567"]
     })
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
     phoneNumbers?: string[];
-
 }

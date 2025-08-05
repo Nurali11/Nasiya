@@ -31,49 +31,53 @@ export class SellerService {
     sortBy: string,
     sortOrder: 'asc' | 'desc',
   ) {
-    const take = Number(limit) || 10
-    const skip = page ? (page - 1) * take : 0;
+    try {
+      const take = Number(limit) || 10
+      const skip = page ? (page - 1) * take : 0;
 
-    const where: any = {};
-    if (filter) {
-      where.OR = [
-        { name: { contains: filter, mode: 'insensitive' } },
-        { phone: { contains: filter, mode: 'insensitive' } },
-        { email: { contains: filter, mode: 'insensitive' } },
-      ];
+      const where: any = {};
+      if (filter) {
+        where.OR = [
+          { name: { contains: filter, mode: 'insensitive' } },
+          { phone: { contains: filter, mode: 'insensitive' } },
+          { email: { contains: filter, mode: 'insensitive' } },
+        ];
+      }
+
+      const orderBy: any = {};
+      if (sortBy) {
+        orderBy[sortBy] = sortOrder || 'asc';
+      }
+
+      const sellers = await this.prisma.seller.findMany({
+        where,
+        skip,
+        take,
+        orderBy: sortBy ? orderBy : { createdAt: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          password: true,
+          email: true,
+          balance: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      const total = await this.prisma.seller.count({ where });
+
+      return {
+        data: sellers,
+        total,
+        page,
+        limit: take,
+        totalPages: Math.ceil(total / take),
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
-
-    const orderBy: any = {};
-    if (sortBy) {
-      orderBy[sortBy] = sortOrder || 'asc';
-    }
-
-    const sellers = await this.prisma.seller.findMany({
-      where,
-      skip,
-      take,
-      orderBy: sortBy ? orderBy : { createdAt: 'desc' },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        password: true,
-        email: true,
-        balance: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    const total = await this.prisma.seller.count({ where });
-
-    return {
-      data: sellers,
-      total,
-      page,
-      limit: take,
-      totalPages: Math.ceil(total / take),
-    };
   }
 
   async post(data: CreateSellerDto) {
@@ -102,9 +106,9 @@ export class SellerService {
   async login(data: LoginSellerDto) {
     console.log(data);
 
-    const { email, password } = data;
-    let seller = await this.prisma.seller.findUnique({ where: { email } });
-    if (!seller) throw new NotFoundException('seller not found');
+    const { username, password } = data;
+    let seller = await this.prisma.seller.findFirst({ where: { name: username } });
+    if (!seller) throw new NotFoundException('Seller not found');
 
     let match = bcrypt.compareSync(password, seller.password);
     if (!match) throw new NotFoundException('wrong password');
@@ -114,7 +118,8 @@ export class SellerService {
   }
 
   async verifyOtp(data: VerifyOtpDto) {
-    const { email, otp } = data;
+    try {
+      const { email, otp } = data;
     const seller = await this.prisma.seller.findUnique({ where: { email } });
     if (!seller) throw new NotFoundException('User not found');
     
@@ -124,41 +129,54 @@ export class SellerService {
     });
 
     return { message: 'OTP tasdiqlandi' };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+
   }
 
   async resetPassword(data: ResetPasswordDto) {
-    const { email, newPassword } = data;
-    const seller = await this.prisma.seller.findUnique({ where: { email } });
-    if (!seller) throw new NotFoundException('User not found');
+    try {
 
-    if (seller.active == "PENDING")
-      return  new UnauthorizedException('OTP tasdig‘i talab qilinadi');
+      const { email, newPassword } = data;
+      const seller = await this.prisma.seller.findUnique({ where: { email } });
+      if (!seller) throw new NotFoundException('User not found');
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+      if (seller.active == "PENDING")
+        return new UnauthorizedException('OTP tasdig‘i talab qilinadi');
 
-    await this.prisma.seller.update({
-      where: { email },
-      data: {
-        password: hashedPassword,
-        active: "ACTIVE",
-      },
-    });
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    return { message: 'Parol muvaffaqiyatli o‘zgartirildi' };
+      await this.prisma.seller.update({
+        where: { email },
+        data: {
+          password: hashedPassword,
+          active: "ACTIVE",
+        },
+      });
+
+      return { message: 'Parol muvaffaqiyatli o‘zgartirildi' };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   async getAccessToken(user: any) {
-    return this.jwt.sign(
-      {
-        id: user.id,
-        fullname: user.fullname,
-        role: user.role,
-        email: user.email,
-        password: user.password,
-        phone: user.phone,
-      },
-      { expiresIn: '1h' },
-    );
+    try {
+      return this.jwt.sign(
+        {
+          id: user.id,
+          fullname: user.fullname,
+          role: user.role,
+          email: user.email,
+          password: user.password,
+          phone: user.phone,
+        },
+        { expiresIn: '1h' },
+      );
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   async refreshToken(dto: RefreshTokenDto) {
