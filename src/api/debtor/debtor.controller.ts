@@ -24,6 +24,7 @@ export class DebtorController {
 
   @ApiQuery({ name: 'phone', required: false, type: String })
   @ApiQuery({ name: 'address', required: false, type: String })
+  @ApiQuery({ name: 'sellerId', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'filter', required: false, type: String })
@@ -33,13 +34,14 @@ export class DebtorController {
   findAll(
     @Query('phone') phone: string,
     @Query('address') address: string,
+    @Query('sellerId') sellerId: string,
     @Query('filter') filter: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('sortBy') sortBy: string,
     @Query('sortOrder') sortOrder: 'asc' | 'desc' = 'asc',
   ) {
-    return this.debtorService.findAll(filter, phone, address, page, limit, sortBy, sortOrder);
+    return this.debtorService.findAll(filter, sellerId, phone, address, page, limit, sortBy, sortOrder);
   }
 
   @Get(':id')

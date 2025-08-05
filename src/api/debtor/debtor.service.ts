@@ -51,6 +51,7 @@ export class DebtorService {
 
   async findAll(
     phone: string,
+    sellerId: string,
     address: string,
     filter: string,
     page: number,
@@ -73,6 +74,10 @@ export class DebtorService {
         where.OR = [
           { Phone: { some: { phone: { contains: phone, mode: 'insensitive' } } } },
         ]
+      }
+
+      if (sellerId) {
+        where.sellerId = sellerId
       }
 
       if (address) {
@@ -115,9 +120,6 @@ export class DebtorService {
         skip,
         take,
         orderBy: sortBy ? orderBy : { createdAt: 'desc' },
-
-
-
       });
 
       const total = await this.prisma.debtor.count({ where });

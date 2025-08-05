@@ -20,20 +20,25 @@ export class AuthService {
   ) { }
 
   async register(data: CreateAuthDto) {
-    const existing = await this.prisma.admin.findFirst({
-      where: { email: data.email },
-    })
-    if (existing) {
-      throw new UnauthorizedException('Bu emaildan ADMIN bor');
-    }
+    try {
+      const existing = await this.prisma.admin.findFirst({
+        where: { OR: [{ email: data.email }, { phone: data.phone }] },
+      })
 
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    return this.prisma.admin.create({
-      data: {
-        ...data,
-        password: hashedPassword
-      },
-    });
+      if (existing) {
+        throw new UnauthorizedException('Bu emaildan yoki phonedan ADMIN bor');
+      }
+
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      return this.prisma.admin.create({
+        data: {
+          ...data,
+          password: hashedPassword
+        },
+      });
+    } catch (error) {
+      return new BadRequestException(error.message)
+    }
   }
 
   async login(data: LoginAuthDto) {

@@ -12,6 +12,7 @@ import { PaymentDto } from './dto/payment.dto';
 import { RolesD } from 'src/common/decorators/roles.decorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
+import { Request } from 'express';
 
 @Controller('seller')
 export class SellerController {
@@ -51,6 +52,13 @@ export class SellerController {
   @Post('login')
   async login(@Body() data: LoginSellerDto) {
     return await this.sellerService.login(data);
+  }
+
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
+  @Get("me")
+  async me(@Req() req: Request) {
+    return await this.sellerService.me(req);
   }
 
   // @Post('verify-otp')

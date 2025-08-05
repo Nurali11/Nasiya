@@ -11,6 +11,7 @@ import { RefreshTokenDto } from './dto/refreshtokenDto';
 import { MailService } from '../../common/mail/mail.service';
 import {totp} from "otplib"
 import { PrismaService } from 'src/core/entity/prisma.service';
+import { Request } from 'express';
 totp.options = {
   digits: 5,
   step: 300,
@@ -80,6 +81,17 @@ export class SellerService {
     }
   }
 
+  /*************  ✨ Windsurf Command ⭐  *************/
+  /**
+   * Creates a new seller.
+   *
+   * @param data - The data of the seller to be created.
+   *
+   * @returns - The created seller.
+   *
+   * @throws - `BadRequestException` if the email already exists.
+   */
+  /*******  03f6b979-142b-4d7c-a415-d07e00befe71  *******/
   async post(data: CreateSellerDto) {
     try {
       let existing = await this.prisma.seller.findUnique({ where: { email: data.email } });
@@ -117,6 +129,24 @@ export class SellerService {
     return { token };
   }
 
+  async me(res: Request) {
+    try {
+      let id = (res as any).user.id
+      let data = await this.prisma.seller.findFirst({
+        where: { id }, include: {
+          Debtor: true,
+          DebtorImage: true,
+          Messages: true,
+          Nasiya: true,
+          Sample: true
+        }
+      })
+
+      return { data }
+    } catch (error) {
+      return new BadRequestException(error.message);
+    }
+  }
   async verifyOtp(data: VerifyOtpDto) {
     try {
       const { email, otp } = data;

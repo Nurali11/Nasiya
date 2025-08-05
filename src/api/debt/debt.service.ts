@@ -103,7 +103,7 @@ export class DebtService {
         orderBy[sortBy] = sortOrder || 'asc';
       }
 
-      const nasiya = await this.prisma.nasiya.findMany({
+      const result = await this.prisma.nasiya.findMany({
         where,
         skip,
         take,
@@ -133,6 +133,11 @@ export class DebtService {
         },
       });
 
+      const nasiya = result.map(({ PaidMonths, ...rest }) => ({
+        ...rest,
+        NotPaidMonths: PaidMonths
+      }));
+
       const total = await this.prisma.nasiya.count({ where })
       return {
         data: nasiya,
@@ -148,7 +153,7 @@ export class DebtService {
 
   async findOne(id: string) {
     try {
-      const nasiya = await this.prisma.nasiya.findFirst({
+      const data = await this.prisma.nasiya.findFirst({
         where: { id },
         include: {
           nasiyaImages: {
@@ -166,8 +171,14 @@ export class DebtService {
           },
           Debtor: true
         }
-      },
-      );
+      });
+      if (!data) return null;
+      const { PaidMonths, ...rest } = data;
+      const nasiya = {
+        ...rest,
+        NotPaidMonths: PaidMonths
+      };
+
       if (!nasiya) {
         throw new NotFoundException('Debt topilmadi');
       }

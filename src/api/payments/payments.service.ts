@@ -76,7 +76,7 @@ export class PaymentsService {
       if (sellerId != nasiya.sellerId) { return new BadRequestException('This borrowed product does not belong to the specified debtor') }
 
       let paidSum = 0
-
+      let paidMonths: number[] = []
       for (let i of data.monthsToPay) {
         let month = await this.prisma.paymentPeriod.findFirst({ where: { nasiyaId: debtId, period: i } })
         if (!month) {
@@ -84,6 +84,7 @@ export class PaymentsService {
           continue
         }
         paidSum += month.sum
+        paidMonths.push(i)
         await this.prisma.paymentPeriod.delete({ where: { id: month.id } })
       }
 
@@ -97,9 +98,15 @@ export class PaymentsService {
         })
       }
 
-      return {
-        message: `Successfully paid. ${errorMessage ? '\n' + errorMessage : ''}`,
-        data
+      if (paidMonths.length) {
+        return {
+          message: `Successfully paid.${errorMessage ? 'and' + errorMessage : ''}`,
+          data
+        }
+      } else {
+        return new BadRequestException({
+          message: `${errorMessage ? 'Months not found ' + errorMessage : ''}`
+        })
       }
     } catch (error) {
       throw new BadRequestException(error.message);
