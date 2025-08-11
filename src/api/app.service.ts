@@ -6,6 +6,10 @@ import { ValidationPipe } from '@nestjs/common';
 export default class Application {
   public static async main(): Promise<void> {
     const app = await NestFactory.create(AppModule);
+    app.enableCors({
+      origin: '*',
+      methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    })
     const config = new DocumentBuilder()
       .setTitle('Nasiya')
       .setDescription('Nasiya Shop')

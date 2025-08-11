@@ -3,11 +3,13 @@ import { CreateNasiyaDto } from './dto/create-nasiya.dto';
 import { UpdateNasiyaDto } from './dto/update-nasiya.dto';
 import { PrismaService } from 'src/core/entity/prisma.service';
 import { Request } from 'express';
+import { addMonthToDate } from 'src/infrastructure/lib/dateFormatter';
+import { DebtDateDto } from './dto/debt-date.dot';
+import { contains } from 'class-validator';
 
 @Injectable()
 export class DebtService {
   constructor(private readonly prisma: PrismaService) { }
-
 
   async create(data: CreateNasiyaDto, req: Request) {
     try {
@@ -20,7 +22,7 @@ export class DebtService {
       }
 
       const monthlyPayment = Math.ceil(data.sum / data.period);
-
+      const endDate = addMonthToDate(data.startDate, data.period)
 
       const nasiya = await this.prisma.nasiya.create({
         data: {
@@ -29,6 +31,7 @@ export class DebtService {
           period: data.period,
           comment: data.comment,
           debtorId: data.debtorId,
+          endDate,
           sum: data.sum,
           sellerId,
           monthlySum: monthlyPayment,
@@ -57,6 +60,7 @@ export class DebtService {
           data: {
             nasiyaId: nasiya.id,
             period: i,
+            endDate: addMonthToDate(data.startDate, i),
             sum: monthlyPayment,
           },
         });
@@ -115,6 +119,7 @@ export class DebtService {
           period: true,
           comment: true,
           debtorId: true,
+          endDate: true,
           createdAt: true,
           sellerId: true,
           updatedAt: true,
@@ -126,6 +131,7 @@ export class DebtService {
           PaidMonths: {
             select: {
               period: true,
+              endDate: true,
               sum: true
             },
             orderBy: { period: "asc" }
@@ -165,7 +171,8 @@ export class DebtService {
           PaidMonths: {
             select: {
               period: true,
-              sum: true
+              sum: true,
+              endDate: true
             },
             orderBy: { period: 'asc' }
           },
@@ -188,34 +195,59 @@ export class DebtService {
     }
   }
 
+
+  async dateFilter(endDate: string) {
+    try {
+      const months = `${endDate.split('.')[1]}.${endDate.split('.')[2]}`
+      const result = await this.prisma.paymentPeriod.findMany({
+        where: {
+          endDate
+        },
+        include: {
+          Nasiya: {
+            include: {
+              Debtor: true
+            }
+          },
+        }
+      })
+      const total = await this.prisma.paymentPeriod.findMany({
+        where: { endDate: { contains: months, mode: 'insensitive' } }
+      })
+      console.log(months, total);
+
+      let totalForMonth = 0
+      for (let i of total) { totalForMonth += i.sum }
+
+      return {
+        data: result,
+        totalForMonth
+      }
+    } catch (error) {
+      return new BadRequestException(error.message);
+    }
+  }
+
   async update(id: string, data: UpdateNasiyaDto) {
     try {
+      console.log(data);
+
       const existing = await this.prisma.nasiya.findFirst({ where: { id } });
 
       if (!existing) {
         throw new NotFoundException("Yangilamoqchi bo'lgan nasiya topilmadi");
       }
 
-      if (data.debtorId) {
-        const debtor = await this.prisma.nasiya.findFirst({
-          where: { id: data.debtorId }
-        });
-        if (!debtor) {
-          throw new BadRequestException('Berilgan debtorId bo‘yicha qarzdor topilmadi');
-        }
-      }
-
 
       const updated = await this.prisma.nasiya.update({
         where: { id },
-        data: {
-          name: data.name,
-          startDate: data.startDate,
-          period: data.period,
-          comment: data.comment,
-          Debtor: {
-            connect: { id: data.debtorId }
-          }
+        data,
+        include: {
+          nasiyaImages: true,
+          Debtor: true,
+          PaidMonths: true,
+          PaymentHistory: true,
+          Seller: true
         }
       });
 
@@ -236,7 +268,9 @@ export class DebtService {
       await this.prisma.nasiyaImage.deleteMany({
         where: { nasiyaId: id }
       });
-
+      await this.prisma.paymentPeriod.deleteMany({
+        where: { nasiyaId: id }
+      }) 
       return await this.prisma.nasiya.delete({
         where: { id }
       });

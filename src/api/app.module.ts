@@ -12,7 +12,6 @@ import { PaymentsModule } from './payments/payments.module';
 import { DebtorModule } from './debtor/debtor.module';
 import { MessageModule } from './messages/message.module';
 import { MulterModule } from './multer/multer.module';
-
 @Module({
   imports: [
     MulterModule,
@@ -30,7 +29,7 @@ import { MulterModule } from './multer/multer.module';
     }),
     ServeStaticModule.forRoot({
     rootPath: join(__dirname, '..', '..', '..', 'uploads'),
-    serveRoot: '/uploads',
+      serveRoot: '/uploads',
     }),
   ]
 })

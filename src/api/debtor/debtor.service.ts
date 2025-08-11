@@ -97,6 +97,7 @@ export class DebtorService {
           name: true,
           address: true,
           comment: true,
+          star: true,
           createdAt: true,
           updatedAt: true,
           Images: {
@@ -114,7 +115,8 @@ export class DebtorService {
               amount: true,
               createAt: true
             }
-          }
+          },
+          Nasiya: true
         },
         where,
         skip,
@@ -122,10 +124,18 @@ export class DebtorService {
         orderBy: sortBy ? orderBy : { createdAt: 'desc' },
       });
 
+      const withTotal = debtor.map((debtor) => {
+        let total = debtor.Nasiya ? debtor.Nasiya.reduce((total, nasiya) => total + nasiya.remainedSum, 0) : 0;
+        return {
+          ...debtor,
+          total
+        }
+      });
+
       const total = await this.prisma.debtor.count({ where });
 
       return {
-        data: debtor,
+        data: withTotal,
         total,
         page,
         limit: take,
@@ -138,13 +148,32 @@ export class DebtorService {
 
   async findOne(id: string) {
     try {
-      const debtor = await this.prisma.debtor.findUnique({ where: { id } }
+      const debtor = await this.prisma.debtor.findUnique({
+        where: { id },
+        include: {
+          Images: true,
+          Phone: true,
+          Message: true,
+          Nasiya: {
+            include: { PaidMonths: true }
+          },
+          PaymentHistory: true,
+          Payment: true,
+          Seller: true,
+        }
+      }
         
       );
       if (!debtor) {
         throw new NotFoundException('Bunday IDga ega qarzdor topilmadi');
       }
-      return debtor;
+
+      const withTotal = {
+        ...debtor,
+        total: debtor.Nasiya ? debtor.Nasiya.reduce((total, nasiya) => total + nasiya.remainedSum, 0) : 0,
+      };
+
+      return withTotal;
     } catch (error) {
       throw new BadRequestException('Topishda xatolik: ' + error.message);
     }
@@ -161,10 +190,6 @@ export class DebtorService {
       where: { debtorId: id },
     });
 
-    if (debts.length > 0) {
-      throw new BadRequestException('Bu qarzdorning qarzlari mavjudligi sababli o‘chirib bo‘lmaydi');
-    }
-
     if (data.images && data.images.length > 0) {
       await this.prisma.debtorImage.updateMany({
         where: { debtorId: id },
@@ -179,6 +204,10 @@ export class DebtorService {
     return await this.prisma.debtor.update({
       where: { id },
       data: debtorFields,
+      include: {
+        Images: true,
+        Phone: true
+      }
     });
   } catch (error) {
     throw new BadRequestException('Yangilashda xatolik: ' + error.message);

@@ -17,7 +17,7 @@ export class MulterController {
           type: 'string',
           format: 'binary',
         },
-      },
+      },  
     },
   })
   @UseInterceptors(

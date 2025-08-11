@@ -16,6 +16,7 @@ totp.options = {
   digits: 5,
   step: 300,
 }
+
 @Injectable()
 export class SellerService {
   constructor(
@@ -81,17 +82,6 @@ export class SellerService {
     }
   }
 
-  /*************  ✨ Windsurf Command ⭐  *************/
-  /**
-   * Creates a new seller.
-   *
-   * @param data - The data of the seller to be created.
-   *
-   * @returns - The created seller.
-   *
-   * @throws - `BadRequestException` if the email already exists.
-   */
-  /*******  03f6b979-142b-4d7c-a415-d07e00befe71  *******/
   async post(data: CreateSellerDto) {
     try {
       let existing = await this.prisma.seller.findUnique({ where: { email: data.email } });
@@ -135,9 +125,12 @@ export class SellerService {
       let data = await this.prisma.seller.findFirst({
         where: { id }, include: {
           Debtor: true,
-          DebtorImage: true,
           Messages: true,
-          Nasiya: true,
+          Nasiya: {
+            include: {
+              PaidMonths: true
+            }
+          },
           Sample: true
         }
       })

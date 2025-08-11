@@ -35,6 +35,7 @@ export class PaymentsService {
     try {
       let { debtId } = data
       let amount = data.amount
+      let totalAmout = amount
       let nasiya = await this.prisma.nasiya.findFirst({ where: { id: debtId } })
       console.log(sellerId, nasiya);
       if (!nasiya) { return new NotFoundException('Borrowed product not found') }
@@ -52,11 +53,13 @@ export class PaymentsService {
           amount = amount - i.sum
         } else if (amount > 0 && amount < i.sum) {
           await this.prisma.paymentPeriod.update({ where: { id: i.id }, data: { sum: i.sum - amount } })
+          await this.prisma.nasiya.update({ where: { id: nasiya.id }, data: { remainedSum: nasiya.remainedSum - amount } })
+          amount = 0
           break
         }
       }
 
-      let historyWrite = await this.prisma.paymentHistory.create({ data: { amount, nasiyaId: nasiya.id, debtorId: nasiya.debtorId } })
+      let historyWrite = await this.prisma.paymentHistory.create({ data: { amount: totalAmout, nasiyaId: nasiya.id, debtorId: nasiya.debtorId } })
 
       return {
         message: "Successfully paid",
@@ -76,7 +79,7 @@ export class PaymentsService {
       if (sellerId != nasiya.sellerId) { return new BadRequestException('This borrowed product does not belong to the specified debtor') }
 
       let paidSum = 0
-      let paidMonths: number[] = []
+      let paidMonths: { month: number, endDate: string }[] = []
       for (let i of data.monthsToPay) {
         let month = await this.prisma.paymentPeriod.findFirst({ where: { nasiyaId: debtId, period: i } })
         if (!month) {
@@ -84,7 +87,10 @@ export class PaymentsService {
           continue
         }
         paidSum += month.sum
-        paidMonths.push(i)
+        paidMonths.push({
+          month: i,
+          endDate: month?.endDate || ""
+        })
         await this.prisma.paymentPeriod.delete({ where: { id: month.id } })
       }
 
@@ -92,8 +98,7 @@ export class PaymentsService {
       if (paidSum) {
         await this.prisma.paymentHistory.create({
           data: {
-            amount: paidSum, nasiyaId
-              : nasiya.id, debtorId: nasiya.debtorId
+            amount: paidSum, nasiyaId: nasiya.id, debtorId: nasiya.debtorId
           }
         })
       }
@@ -101,7 +106,10 @@ export class PaymentsService {
       if (paidMonths.length) {
         return {
           message: `Successfully paid.${errorMessage ? 'and' + errorMessage : ''}`,
-          data
+          data: {
+            debtId: debtId,
+            paidMonths
+          }
         }
       } else {
         return new BadRequestException({

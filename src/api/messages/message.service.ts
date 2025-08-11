@@ -72,6 +72,21 @@ export class MessageService {
     }
   }
 
+  async myMessages(id: string) {
+    try {
+      let messages = await this.prisma.debtor.findMany({
+        where: { sellerId: id },
+        include: { Message: { orderBy: { createdAt: 'desc' } }, Phone: true },
+      })
+
+      return messages
+    } catch (error) {
+      throw new BadRequestException(
+        `Error fetching message: ${error.message}`,
+      );
+    }
+  }
+
   async findOne(id: string) {
     try {
       const message = await this.prisma.message.findFirst({
@@ -102,12 +117,9 @@ export class MessageService {
       });
       if (!message)
         throw new BadRequestException('message not found');
-      if (message.sellerId !== userId)
-        throw new ForbiddenException('Access denied');
-
       const updated = await this.prisma.message.update({
         where: { id },
-        data: { text: data.text },
+        data,
       });
 
       return {

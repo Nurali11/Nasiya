@@ -55,10 +55,19 @@ export class MessageController {
 
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
+  @Get('myMessages')
+  myMessages(@Req() req: Request) {
+    const userId = req['user'].id;
+    return this.messageService.myMessages(userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.messageService.findOne(id);
   }
+
 
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
