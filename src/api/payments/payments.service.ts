@@ -6,7 +6,14 @@ import { PayForMonths } from './dto/RemainingMonths.dto';
 @Injectable()
 export class PaymentsService {
   constructor(private readonly prisma: PrismaService) { }
-
+  async getAll(sellerId: string) {
+    try {
+      let all = await this.prisma.paymentHistory.findMany({ where: { Debtor: { sellerId } }, include: { Debtor: { include: { Phone: true } }, Nasiya: true } })
+      return all
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
   async OneMonth(data: CreatePaymentDto, sellerId: string) {
     try {
       let { debtId } = data

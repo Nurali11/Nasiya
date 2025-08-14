@@ -270,7 +270,7 @@ export class DebtService {
       });
       await this.prisma.paymentPeriod.deleteMany({
         where: { nasiyaId: id }
-      }) 
+      })
       return await this.prisma.nasiya.delete({
         where: { id }
       });

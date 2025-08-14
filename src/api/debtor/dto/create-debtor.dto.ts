@@ -4,7 +4,7 @@ import { IsArray, IsOptional, IsString } from "class-validator"
 export class CreateDebtorDto {
     @ApiProperty({ example: "John Doe" })
     @IsString()
-    fullname: string
+    name: string
 
     @ApiProperty({ example: "Tashkent Chilonzor" })
     @IsString()

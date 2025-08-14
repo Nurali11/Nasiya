@@ -12,6 +12,12 @@ RolesD("SELLER")
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
+  @UseGuards(AuthGuard)
+  @Get("")
+  getAll(@Req() req: Request) {
+    const sellerId = (req as any).user.id
+    return this.paymentsService.getAll(sellerId);
+  }
 
   @RolesD("SELLER")
   @UseGuards(AuthGuard, RoleGuard)

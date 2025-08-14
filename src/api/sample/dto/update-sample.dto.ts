@@ -5,7 +5,7 @@ export class UpdateSampleDto {
   @ApiProperty()
   @IsString()
   @IsOptional()
-  text: string;
+  comment: string;
   @ApiProperty()
   @IsBoolean()
   @IsOptional()

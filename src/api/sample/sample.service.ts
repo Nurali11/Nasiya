@@ -30,6 +30,14 @@ export class SampleService {
     }
   }
 
+  async mySamples(sellerId: string) {
+    try {
+      let samples = await this.prisma.sample.findMany({ where: { sellerId }, orderBy: { createdAt: 'desc' } })
+      return samples
+    } catch (error) {
+      throw new BadRequestException(`Error fetching sample: ${error.message}`);
+    }
+  }
   async findAll(filter: SampleFilterDto, userId: string) {
     try {
       const { search, status, page = 1, limit = 10, sortBy, sortOrder, sellerId } = filter;

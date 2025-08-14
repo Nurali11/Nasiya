@@ -43,9 +43,14 @@ export class MessageService {
         };
       }
 
+      if (debtorId) {
+        where.debtorId = debtorId;
+      }
+
       where.sellerId = sellerId || userId
 
       const messages = await this.prisma.message.findMany({
+        include: { debtor: { select: { name: true } } },
         where,
         skip: (page - 1) * limit,
         take: limit,

@@ -11,7 +11,7 @@ export class DebtorService {
     try {
       const newDebtor = await this.prisma.debtor.create({
         data: {
-          name: data.fullname,
+          name: data.name,
           address: data.address,
           comment: data.comment,
           Seller: {
@@ -186,17 +186,36 @@ export class DebtorService {
       throw new NotFoundException('Yangilamoqchi bo\'lgan qarzdor topilmadi');
     }
 
-    const debts = await this.prisma.nasiya.findMany({
-      where: { debtorId: id },
-    });
-
     if (data.images && data.images.length > 0) {
-      await this.prisma.debtorImage.updateMany({
-        where: { debtorId: id },
-        data: {
-          image: data.images[0], 
+      await this.prisma.debtorImage.deleteMany({
+        where: {
+          debtorId: id
         }
       });
+      for (let i of data.images) {
+        await this.prisma.debtorImage.create({
+          data: {
+            debtorId: id,
+            image: i
+          }
+        })
+      }
+    }
+
+    if (data.phoneNumbers && data.phoneNumbers.length > 0) {
+      await this.prisma.debtorPhone.deleteMany({
+        where: {
+          debtorId: id,
+        }
+      });
+      for (let i of data.phoneNumbers) {
+        await this.prisma.debtorPhone.create({
+          data: {
+            debtorId: id,
+            phone: i
+          }
+        })
+      }
     }
 
     const { images, phoneNumbers, ...debtorFields } = data;

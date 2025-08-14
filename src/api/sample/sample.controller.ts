@@ -15,6 +15,14 @@ export class SampleController {
 
   @RolesD("SELLER")
   @UseGuards(AuthGuard, RoleGuard)
+  @Get('my')
+  mySamples(@Req() req: Request) {
+    const userId = req['user'].id;
+    return this.sampleService.mySamples(userId);
+  }
+
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Post()
   create(@Body() createSampleDto: CreateSampleDto, @Req() req: Request) {
     const userId = req['user'].id;
