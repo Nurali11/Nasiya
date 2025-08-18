@@ -245,7 +245,11 @@ export class DebtorService {
       });
 
       if (debts.length > 0) {
-        throw new BadRequestException('Bu qarzdorning qarzlari mavjudligi sababli o‘chirib bo‘lmaydi');
+        await this.prisma.nasiya.deleteMany({
+          where: {
+            debtorId: id
+          }
+        })
       }
 
       await this.prisma.debtorImage.deleteMany({
