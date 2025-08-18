@@ -249,7 +249,7 @@ export class DebtorService {
           where: {
             debtorId: id
           }
-        })
+        }) 
       }
 
       await this.prisma.debtorImage.deleteMany({
