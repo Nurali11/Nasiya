@@ -230,18 +230,80 @@ export class DebtService {
 
   async update(id: string, data: UpdateNasiyaDto) {
     try {
-      console.log(data);
-
       const existing = await this.prisma.nasiya.findFirst({ where: { id } });
 
       if (!existing) {
         throw new NotFoundException("Yangilamoqchi bo'lgan nasiya topilmadi");
       }
 
+      let { debtorId, images, ...rest } = data
+      let updateData: any = { ...rest }
+      if (data.debtorId) {
+        const debtor = await this.prisma.debtor.findFirst({ where: { id: data.debtorId } });
+        if (!debtor) {
+          throw new NotFoundException("Yangilamoqchi bo'lgan debtor topilmadi");
+        }
+      }
+
+      if (data.images && data.images.length > 0) {
+        await this.prisma.nasiyaImage.deleteMany({
+          where: {
+            nasiyaId: id
+          }
+        });
+        await Promise.all(
+          data.images.map(async (item) => {
+            await this.prisma.nasiyaImage.create({
+              data: {
+                nasiyaId: id,
+                image: item,
+              },
+            });
+          }),
+        );
+      }
+
+      if (data.sum) {
+        await this.prisma.paymentPeriod.deleteMany({
+          where: {
+            nasiyaId: id
+          }
+        })
+        if (data.period) {
+          const monthlyPayment = Math.ceil(data.sum / data.period);
+          updateData.monthlySum = monthlyPayment
+          updateData.remainedSum = data.sum
+          for (let i = 1; i <= data.period; i++) {
+            await this.prisma.paymentPeriod.create({
+              data: {
+                nasiyaId: id,
+                period: i,
+                endDate: addMonthToDate(data.startDate, i),
+                sum: monthlyPayment,
+              },
+            });
+          }
+        }
+      }
+      await this.prisma.paymentHistory.deleteMany({
+        where: {
+          nasiyaId: id
+        }
+      })
+
+      console.log(updateData);
+      console.log(await this.prisma.paymentPeriod.findMany({ where: { nasiyaId: id } }));
+
+
 
       const updated = await this.prisma.nasiya.update({
         where: { id },
-        data,
+        data: {
+          ...updateData,
+          Debtor: {
+            connect: { id: debtorId }
+          }
+        },
         include: {
           nasiyaImages: true,
           Debtor: true,

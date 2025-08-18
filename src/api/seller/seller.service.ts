@@ -82,6 +82,19 @@ export class SellerService {
     }
   }
 
+
+  async settings(sellerId: string) {
+    try {
+      let me = await this.prisma.seller.findFirst({ where: { id: sellerId } });
+      if (!me) throw new NotFoundException('Seller not found');
+      return {
+        message: "Successfully fetched",
+        data: me
+      }
+    } catch (error) {
+      return new BadRequestException(error.message);
+    }
+  }
   async post(data: CreateSellerDto) {
     try {
       let existing = await this.prisma.seller.findUnique({ where: { email: data.email } });

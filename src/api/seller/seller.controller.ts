@@ -56,6 +56,14 @@ export class SellerController {
 
   @RolesD("SELLER")
   @UseGuards(AuthGuard, RoleGuard)
+  @Get('settings')
+  async settings(@Req() req: Request) {
+    const id = (req as any).user.id;
+    return await this.sellerService.settings(id);
+  }
+
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Get("me")
   async me(@Req() req: Request) {
     return await this.sellerService.me(req);
