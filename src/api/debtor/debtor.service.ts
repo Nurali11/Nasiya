@@ -236,33 +236,18 @@ export class DebtorService {
 
   async remove(id: string) {
     try {
-      const existing = await this.prisma.debtor.findUnique({ where: { id } });
+      const existing = await this.prisma.debtor.findFirst({ where: { id } });
       if (!existing) {
-        throw new NotFoundException('O\'chirilmoqchi bo\'lgan qarzdor topilmadi');
+        throw new NotFoundException("O'chirilmoqchi bo'lgan qarzdor topilmadi");
       }
-      const debts = await this.prisma.nasiya.findMany({
-        where: { debtorId: id },
+      return await this.prisma.debtor.delete({
+        where: { id }
       });
-
-      if (debts.length > 0) {
-        await this.prisma.nasiya.deleteMany({
-          where: {
-            debtorId: id
-          }
-        }) 
-      }
-
-      await this.prisma.debtorImage.deleteMany({
-        where: { debtorId: id }
-      })
-
-      await this.prisma.debtorPhone.deleteMany({
-        where: { debtorId: id }
-      })
-
-      return await this.prisma.debtor.delete({ where: { id } });
     } catch (error) {
-      throw new BadRequestException('O\'chirishda xatolik: ' + error.message);
+      console.log(error);
+
+      throw new BadRequestException("O'chirishda xatolik: " + error.message);
     }
   }
+
 }
