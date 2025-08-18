@@ -17,7 +17,7 @@ export class MulterController {
           type: 'string',
           format: 'binary',
         },
-      },  
+      },
     },
   })
   @UseInterceptors(
@@ -34,6 +34,6 @@ export class MulterController {
     if (!file) {
       throw new BadRequestException('Send file please');
     }
-    return { url: `${file.filename}` };
+    return { filename: `${file.filename}`, path: `/uploads/${file.filename}` };
   }
 }

@@ -245,7 +245,6 @@ export class DebtorService {
       });
     } catch (error) {
       console.log(error);
-
       throw new BadRequestException("O'chirishda xatolik: " + error.message);
     }
   }
