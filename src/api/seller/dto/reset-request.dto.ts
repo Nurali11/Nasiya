@@ -5,5 +5,4 @@ export class ResetRequestDto {
     @ApiProperty({ example: 'john@gmail.com' })
     @IsString()
     email: string
-
 }

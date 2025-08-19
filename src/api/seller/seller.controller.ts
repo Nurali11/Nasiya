@@ -62,6 +62,21 @@ export class SellerController {
     return await this.sellerService.settings(id);
   }
 
+  @Post('forget')
+  forgetRequest(@Body() data: ResetRequestDto) {
+    return this.sellerService.forgetRequest(data.email);
+  }
+
+  @Post('verifyOtp')
+  async verifyOtp(@Body() data: VerifyOtpDto) {
+    return await this.sellerService.forgetVerify(data);
+  }
+
+  @Post('resetPassword')
+  async resetPassword(@Body() data: ResetPasswordDto) {
+    return await this.sellerService.resetPassword(data);
+  }
+
   @RolesD("SELLER")
   @UseGuards(AuthGuard, RoleGuard)
   @Get("me")
@@ -69,20 +84,6 @@ export class SellerController {
     return await this.sellerService.me(req);
   }
 
-  // @Post('verify-otp')
-  // async verifyOtp(@Body() data: VerifyOtpDto) {
-  //   return this.sellerService.verifyOtp(data);
-  // }
-
-  // @Post('reset-password')
-  // async resetPassword(@Body() data: ResetPasswordDto) {
-  //   return this.sellerService.resetPassword(data);
-  // }
-
-  // @Post('refresh-token')
-  // async refreshToken(@Body() data: RefreshTokenDto) {
-  //   return await this.sellerService.refreshToken(data);
-  // }
 
   @Patch(':id')
     update(@Param('id') id: string, @Body() data: UpdateSellerDto) {

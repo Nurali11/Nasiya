@@ -8,6 +8,6 @@ import { SharedJwtModule } from '../shared/jwt.module';
 @Module({
   imports: [SharedJwtModule],
   controllers: [SellerController],
-  providers: [SellerService, MailService, PrismaService],
+  providers: [SellerService, MailService, PrismaService, MailService],
 })
 export class SellerModule { }

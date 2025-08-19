@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import {totp} from "otplib"
 import { PrismaService } from 'src/core/entity/prisma.service';
+import { MailService } from 'src/common/mail/mail.service';
 
 totp.options = {
   digits: 5,
@@ -17,6 +18,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private readonly jwt: JwtService,
+    private mailService: MailService
   ) { }
 
   async register(data: CreateAuthDto) {

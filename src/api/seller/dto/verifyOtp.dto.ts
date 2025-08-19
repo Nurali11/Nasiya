@@ -5,6 +5,8 @@ export class VerifyOtpDto {
     @ApiProperty({ example: 'alex@gmail.com' })
     @IsString()
     email: string
+
     @ApiProperty({ example: '123456' })
+    @IsString()
     otp: string
 }

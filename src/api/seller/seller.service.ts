@@ -14,7 +14,7 @@ import { PrismaService } from 'src/core/entity/prisma.service';
 import { Request } from 'express';
 totp.options = {
   digits: 5,
-  step: 300,
+  step: 60,
 }
 
 @Injectable()
@@ -82,6 +82,50 @@ export class SellerService {
     }
   }
 
+  async forgetRequest(email: string) {
+    try {
+      let user = await this.prisma.seller.findFirst({ where: { email } });
+      if (!user) throw new NotFoundException('Seller with such email not found');
+      const otp = totp.generate(`${email}${user.id}`)
+      this.mailService.sendEmail(email, 'Parolni tiklash uchun', `Parolni tiklash uchun kod: ${otp}`, otp);
+      return { message: 'OTP yuborildi' };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async forgetVerify(data: VerifyOtpDto) {
+    try {
+      let { otp } = data
+      let user = await this.prisma.seller.findFirst({ where: { email: data.email } });
+      if (!user) throw new NotFoundException('Seller with such email not found');
+      let match = totp.check(otp, `${user.email}${user.id}`);
+      if (!match) throw new BadRequestException('OTP wrong');
+      await this.prisma.seller.update({ where: { email: user.email }, data: { active: "ACTIVE" } });
+      return { message: 'OTP tasdiqlandi' };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async resetPassword(data: ResetPasswordDto) {
+    try {
+      let { email, newPassword } = data;
+      let user = await this.prisma.seller.findFirst({ where: { email } });
+      if (!user) throw new NotFoundException('User not found');
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await this.prisma.seller.update({
+        where: { email: email },
+        data: {
+          password: hashedPassword,
+        },
+      });
+      return { message: 'Parol muvaffaqiyatli o`zgartirildi' };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
   async settings(sellerId: string) {
     try {
@@ -151,49 +195,6 @@ export class SellerService {
       return { data }
     } catch (error) {
       return new BadRequestException(error.message);
-    }
-  }
-  async verifyOtp(data: VerifyOtpDto) {
-    try {
-      const { email, otp } = data;
-    const seller = await this.prisma.seller.findUnique({ where: { email } });
-    if (!seller) throw new NotFoundException('User not found');
-    
-    await this.prisma.seller.update({
-      where: { email },
-      data: { active: "ACTIVE" },
-    });
-
-    return { message: 'OTP tasdiqlandi' };
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-
-  }
-
-  async resetPassword(data: ResetPasswordDto) {
-    try {
-
-      const { email, newPassword } = data;
-      const seller = await this.prisma.seller.findUnique({ where: { email } });
-      if (!seller) throw new NotFoundException('User not found');
-
-      if (seller.active == "PENDING")
-        return new UnauthorizedException('OTP tasdig‘i talab qilinadi');
-
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-      await this.prisma.seller.update({
-        where: { email },
-        data: {
-          password: hashedPassword,
-          active: "ACTIVE",
-        },
-      });
-
-      return { message: 'Parol muvaffaqiyatli o‘zgartirildi' };
-    } catch (error) {
-      throw new BadRequestException(error.message);
     }
   }
 

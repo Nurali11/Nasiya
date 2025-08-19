@@ -1,9 +1,10 @@
-import { Body, Controller, Post, Get, Param, Patch, Delete, ParseUUIDPipe, Query, } from '@nestjs/common';
+import { Body, Controller, Post, Get, Param, Patch, Delete, ParseUUIDPipe, Query, Req, } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 
 @ApiTags('Admin')
 @Controller('auth')
@@ -29,7 +30,6 @@ export class AuthController {
   findAll(@Query('filter') filter: string, @Query('page') page: number = 1, @Query('limit') limit: number = 10, @Query('sortBy') sortBy: string, @Query('sortOrder') sortOrder: 'asc' | 'desc' = 'asc',) {
     return this.authService.findAll(filter, page, limit, sortBy, sortOrder);
   }
-
 
   @Get(':id')
   getAdmin(@Param('id') id: string) {
