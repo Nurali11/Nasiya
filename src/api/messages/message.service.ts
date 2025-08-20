@@ -92,6 +92,17 @@ export class MessageService {
     }
   }
 
+  async chatDelete(id: string) {
+    try {
+      let deleted = await this.prisma.message.deleteMany({ where: { debtorId: id } });
+      return deleted
+    } catch (error) {
+      throw new BadRequestException(
+        `Error deleting message: ${error.message}`,
+      );
+    }
+  }
+
   async findOne(id: string) {
     try {
       const message = await this.prisma.message.findFirst({

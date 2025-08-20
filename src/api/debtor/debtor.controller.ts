@@ -22,6 +22,8 @@ export class DebtorController {
     return this.debtorService.create(data, sellerId);
   }
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @ApiQuery({ name: 'phone', required: false, type: String })
   @ApiQuery({ name: 'address', required: false, type: String })
   @ApiQuery({ name: 'sellerId', required: false, type: String })
@@ -44,16 +46,22 @@ export class DebtorController {
     return this.debtorService.findAll(filter, sellerId, phone, address, page, limit, sortBy, sortOrder);
   }
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.debtorService.findOne(id);
   }
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDebtorDto: UpdateDebtorDto) {
     return this.debtorService.update(id, updateDebtorDto);
   }
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.debtorService.remove(id);

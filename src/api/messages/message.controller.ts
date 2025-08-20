@@ -17,6 +17,8 @@ import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { RoleGuard } from 'src/common/guards/role.guard';
+import { RolesD } from 'src/common/decorators/roles.decorator';
 
 @Controller('message')
 export class MessageController {
@@ -61,16 +63,25 @@ export class MessageController {
     return this.messageService.myMessages(userId);
   }
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @Delete('deleteChat/:debtorId')
+  deleteChat(@Param('debtorId') debtorid: string) {
+    return this.messageService.chatDelete(debtorid);
+  }
+
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiBearerAuth()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.messageService.findOne(id);
   }
 
 
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -81,8 +92,8 @@ export class MessageController {
     return this.messageService.update(id, updateNotificationDto, userId);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: Request) {
     const userId = req['user'].id;

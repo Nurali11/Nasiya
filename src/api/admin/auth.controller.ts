@@ -1,16 +1,21 @@
-import { Body, Controller, Post, Get, Param, Patch, Delete, ParseUUIDPipe, Query, Req, } from '@nestjs/common';
+import { Body, Controller, Post, Get, Param, Patch, Delete, ParseUUIDPipe, Query, Req, UseGuards, } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
+import { RoleGuard } from 'src/common/guards/role.guard';
+import { RolesD } from 'src/common/decorators/roles.decorator';
+import { AuthGuard } from 'src/common/guards/auth.guard';
 
 @ApiTags('Admin')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
+  @RolesD('ADMIN')
+  @UseGuards(AuthGuard, RoleGuard)
   @Post('register')
   register(@Body() dto: CreateAuthDto) {
     return this.authService.register(dto);
@@ -36,12 +41,16 @@ export class AuthController {
     return this.authService.singleAdmin(id);
   }
 
+  @RolesD('ADMIN')
+  @UseGuards(AuthGuard, RoleGuard)
   @Patch(':id')
   updateAdmin(@Param('id') id: string, @Body() dto: UpdateAuthDto,
   ) {
     return this.authService.updateAdmin(id, dto);
   }
 
+  @RolesD('ADMIN')
+  @UseGuards(AuthGuard, RoleGuard)
   @Delete(':id')
   deleteAdmin(@Param('id') id: string) {
     return this.authService.deleteAdmin(id);

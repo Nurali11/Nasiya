@@ -47,6 +47,7 @@ export class PaymentsService {
       console.log(sellerId, nasiya);
       if (!nasiya) { return new NotFoundException('Borrowed product not found') }
       if (sellerId != nasiya.sellerId) { return new BadRequestException('This borrowed product does not belong to the specified debtor') }
+      let totalRemainedSum = nasiya.remainedSum
 
       let remainedMonths = await this.prisma.paymentPeriod.findMany({ where: { nasiyaId: debtId }, orderBy: { period: 'asc' } })
       if (!remainedMonths.length) {
@@ -56,12 +57,16 @@ export class PaymentsService {
       for (let i of remainedMonths) {
         if (amount >= i.sum) {
           await this.prisma.paymentPeriod.delete({ where: { id: i.id } })
-          await this.prisma.nasiya.update({ where: { id: nasiya.id }, data: { remainedSum: nasiya.remainedSum - i.sum } })
+          let up = await this.prisma.nasiya.update({ where: { id: nasiya.id }, data: { remainedSum: totalRemainedSum - i.sum } })
+          totalRemainedSum = totalRemainedSum - i.sum
           amount = amount - i.sum
+          console.log(i.sum, amount, up.remainedSum);
         } else if (amount > 0 && amount < i.sum) {
           await this.prisma.paymentPeriod.update({ where: { id: i.id }, data: { sum: i.sum - amount } })
-          await this.prisma.nasiya.update({ where: { id: nasiya.id }, data: { remainedSum: nasiya.remainedSum - amount } })
+          let up = await this.prisma.nasiya.update({ where: { id: nasiya.id }, data: { remainedSum: totalRemainedSum - amount } })
           amount = 0
+          console.log("b", i.sum, amount, up.remainedSum);
+
           break
         }
       }
@@ -76,6 +81,7 @@ export class PaymentsService {
       throw new BadRequestException(error.message);
     }
   }
+
 
   async forMonths(data: PayForMonths, sellerId: string) {
     try {

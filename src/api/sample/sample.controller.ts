@@ -29,8 +29,9 @@ export class SampleController {
     return this.sampleService.create(createSampleDto, userId);
   }
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Get()
-  @UseGuards(AuthGuard)
   @ApiQuery({ name: "sellerId", required: false, type: String, description: 'Seller id' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search' })
   @ApiQuery({ name: 'status', required: false, type: Boolean, description: 'Status (true/false)' })
@@ -43,13 +44,15 @@ export class SampleController {
     return this.sampleService.findAll(query, userId);
   }
 
-  @UseGuards(AuthGuard)
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.sampleService.findOne(id);
   }
 
-  @UseGuards(AuthGuard)
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -60,7 +63,8 @@ export class SampleController {
     return this.sampleService.update(id, updateSampleDto, user);
   }
 
-  @UseGuards(AuthGuard)
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: Request) {
     const user = req['user'];

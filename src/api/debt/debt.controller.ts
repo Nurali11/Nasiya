@@ -20,12 +20,16 @@ export class DebtController {
     return this.debtService.create(data, res);
   }
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @ApiQuery({ name: 'endDate', required: true, type: String })
   @Get("date")
   dateToday(@Query("endDate") endDate: string) {
     return this.debtService.dateFilter(endDate)
   }
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'filter', required: false, type: String })
@@ -42,12 +46,16 @@ export class DebtController {
     return this.debtService.findAll(filter, page, limit, sortBy, sortOrder);
   }
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.debtService.findOne(id);
   }
 
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDebtDto: UpdateNasiyaDto) {
     console.log(updateDebtDto);
@@ -55,6 +63,8 @@ export class DebtController {
     return this.debtService.update(id, updateDebtDto);
   }
 
+  @RolesD("SELLER")
+  @UseGuards(AuthGuard, RoleGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.debtService.remove(id);
