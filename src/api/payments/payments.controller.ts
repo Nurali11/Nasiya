@@ -11,9 +11,7 @@ import { RoleGuard } from 'src/common/guards/role.guard';
 RolesD("SELLER")
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
-  @RolesD("SELLER")
-  @UseGuards(AuthGuard, RoleGuard)
+  constructor(private readonly paymentsService: PaymentsService) { }
   @Get("")
   getAll(@Req() req: Request) {
     const sellerId = (req as any).user.id

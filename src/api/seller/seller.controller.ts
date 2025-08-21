@@ -84,8 +84,6 @@ export class SellerController {
     return await this.sellerService.me(req);
   }
 
-  @RolesD("ADMIN", "SELLER")
-  @UseGuards(AuthGuard, RoleGuard)
   @Patch(':id')
     update(@Param('id') id: string, @Body() data: UpdateSellerDto) {
       return this.sellerService.update(id, data);

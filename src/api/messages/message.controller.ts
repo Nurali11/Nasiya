@@ -35,8 +35,6 @@ export class MessageController {
     return this.messageService.create(createNotificationDto, userId);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard)
   @Get()
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
@@ -71,9 +69,6 @@ export class MessageController {
     return this.messageService.chatDelete(debtorid);
   }
 
-  @RolesD("SELLER")
-  @UseGuards(AuthGuard, RoleGuard)
-  @ApiBearerAuth()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.messageService.findOne(id);

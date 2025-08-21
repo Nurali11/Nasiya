@@ -28,8 +28,6 @@ export class DebtController {
     return this.debtService.dateFilter(endDate)
   }
 
-  @RolesD("SELLER")
-  @UseGuards(AuthGuard, RoleGuard)
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'filter', required: false, type: String })
@@ -46,8 +44,6 @@ export class DebtController {
     return this.debtService.findAll(filter, page, limit, sortBy, sortOrder);
   }
 
-  @RolesD("SELLER")
-  @UseGuards(AuthGuard, RoleGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.debtService.findOne(id);

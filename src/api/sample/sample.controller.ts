@@ -29,8 +29,6 @@ export class SampleController {
     return this.sampleService.create(createSampleDto, userId);
   }
 
-  @RolesD("SELLER")
-  @UseGuards(AuthGuard, RoleGuard)
   @Get()
   @ApiQuery({ name: "sellerId", required: false, type: String, description: 'Seller id' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search' })
@@ -44,8 +42,6 @@ export class SampleController {
     return this.sampleService.findAll(query, userId);
   }
 
-  @RolesD("SELLER")
-  @UseGuards(AuthGuard, RoleGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.sampleService.findOne(id);
